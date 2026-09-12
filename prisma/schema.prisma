@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  username     String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  character    Character?
+  quests       Quest[]
+  activityLogs ActivityLog[]
+  customItems  Item[]
+}
+
+model Character {
+  id            String          @id @default(uuid())
+  userId        String          @unique
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  heroName      String
+  heroClass     String          @default("Wanderer")
+  avatar        String          @default("warrior")
+  level         Int             @default(1)
+  currentXp     Int             @default(0)
+  gold          Int             @default(100)
+  hp            Int             @default(100)
+  maxHp         Int             @default(100)
+  
+  // Attributes
+  strength      Int             @default(10)
+  intellect     Int             @default(10)
+  vitality      Int             @default(10)
+  agility       Int             @default(10)
+  charisma      Int             @default(10)
+  
+  // Streaks
+  currentStreak Int             @default(0)
+  longestStreak Int             @default(0)
+  lastActiveDate String?
+  
+  inventory     InventoryItem[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Quest {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String    @default("DAILY") // HABIT, DAILY, TODO, BOSS_RAID
+  attribute   String    @default("INTELLECT") // STRENGTH, INTELLECT, VITALITY, AGILITY, CHARISMA
+  difficulty  String    @default("MEDIUM") // TRIVIAL, EASY, MEDIUM, HARD, LEGENDARY
+  xpReward    Int       @default(50)
+  goldReward  Int       @default(30)
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  dueDate     DateTime?
+  streakCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Item {
+  id             String          @id @default(uuid())
+  name           String
+  description    String
+  category       String          // WEAPON, ARMOR, RELIC, CONSUMABLE, REAL_WORLD
+  cost           Int
+  icon           String
+  statAttribute  String?         // STRENGTH, INTELLECT, VITALITY, AGILITY, CHARISMA
+  statBonus      Int             @default(0)
+  isCustom       Boolean         @default(false)
+  userId         String?
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inventoryItems InventoryItem[]
+  createdAt      DateTime        @default(now())
+}
+
+model InventoryItem {
+  id          String    @id @default(uuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  quantity    Int       @default(1)
+  isEquipped  Boolean   @default(false)
+  acquiredAt  DateTime  @default(now())
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String   // QUEST_COMPLETED, LEVEL_UP, ITEM_BOUGHT, ITEM_EQUIPPED, BOSS_DAMAGE, STREAK_ADVANCE
+  details    String
+  xpEarned   Int      @default(0)
+  goldEarned Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model WorldBoss {
+  id          String   @id @default(uuid())
+  name        String
+  title       String
+  maxHp       Int
+  currentHp   Int
+  level       Int      @default(1)
+  avatar      String
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
